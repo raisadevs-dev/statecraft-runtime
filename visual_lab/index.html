@@ -773,6 +773,18 @@ function animate() {
 }
 
 animate();
+
+// Public bridge API: Python runtime can control this visual prototype.
+window.characterVisuals = {
+  setExpression(value) {
+    const allowed = ["friendly", "curious", "thinking", "confident", "hurt"];
+    if (!allowed.includes(value)) return;
+    const control = document.getElementById("expression");
+    if (control) control.value = value;
+    updateAppearance();
+  }
+};
 </script>
+<script type="module" src="./runtime-bridge.js"></script>
 </body>
 </html>
