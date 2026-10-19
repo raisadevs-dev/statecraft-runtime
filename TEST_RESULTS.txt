@@ -1,0 +1,22 @@
+Spreadsheet runtime warmup failed during python startup
+Traceback (most recent call last):
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/patches/warm_spreadsheet_runtime_on_startup.py", line 26, in warm_spreadsheet_runtime_on_startup
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/spreadsheet_warmup.py", line 785, in warm_spreadsheet_runtime
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/spreadsheet_warmup.py", line 718, in _warm_feature_flows
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/spreadsheet_warmup.py", line 509, in _warm_drawing_and_image_flows
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/generated/interface/models.py", line 32861, in bring_to_front
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/rpc/remote.py", line 764, in __call__
+  File "/tmp/tmp.QlpUkOUI9D/artifact_tool_v2-2.8.66/artifact_tool/rpc/client.py", line 175, in call
+artifact_tool.rpc.client.RemoteError: Element ordering requires an owning element collection.
+test_accountability_with_change_can_rebuild_trust_gradually (test_engine.TigressEngineTests.test_accountability_with_change_can_rebuild_trust_gradually) ... ok
+test_apology_does_not_automatically_restore_trust (test_engine.TigressEngineTests.test_apology_does_not_automatically_restore_trust) ... ok
+test_honest_mistake_is_not_counted_as_repeated_harm (test_engine.TigressEngineTests.test_honest_mistake_is_not_counted_as_repeated_harm) ... ok
+test_save_and_load_round_trip (test_engine.TigressEngineTests.test_save_and_load_round_trip) ... ok
+test_state_is_clamped (test_engine.TigressEngineTests.test_state_is_clamped) ... ok
+test_unclear_event_does_not_change_trust (test_engine.TigressEngineTests.test_unclear_event_does_not_change_trust) ... ok
+test_unjustified_restriction_sets_boundary_and_changes_state (test_engine.TigressEngineTests.test_unjustified_restriction_sets_boundary_and_changes_state) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK

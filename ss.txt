@@ -1,0 +1,30 @@
+
+EVENT: SUPPORTIVE_ADVICE | A friend offers practical advice.
+ACTION: LISTEN_AND_EVALUATE
+TIGRESS: Main tumhari baat sunungi aur dekhungi ki yeh mere liye sahi hai ya nahi.
+WHY: Advice is considered without surrendering independent judgment.
+STATE: {'trust': 0.75, 'emotional_safety': 0.8, 'autonomy': 0.85, 'hurt': 0.1, 'openness': 0.91, 'defensiveness': 0.15, 'interaction_count': 1, 'harmful_pattern_count': 0, 'accountable_change_count': 0}
+
+EVENT: UNJUSTIFIED_RESTRICTION | Partner demands she stop speaking to a friend.
+ACTION: CHALLENGE_AND_SET_BOUNDARY
+TIGRESS: Tumhari feelings sun sakti hoon, lekin meri choices par unilateral control acceptable nahi hai. Genuine concern hai toh discuss karte hain.
+WHY: A restriction is challenged while leaving room for context and discussion.
+STATE: {'trust': 0.71, 'emotional_safety': 0.75, 'autonomy': 0.85, 'hurt': 0.15, 'openness': 0.91, 'defensiveness': 0.18, 'interaction_count': 2, 'harmful_pattern_count': 0, 'accountable_change_count': 0}
+
+EVENT: REPEATED_HARM | The same boundary is ignored repeatedly.
+ACTION: PROTECT_BOUNDARIES_AND_REASSESS_TRUST
+TIGRESS: Yeh baar-baar ho raha hai. Sirf explanation kaafi nahi; mujhe consistent change dekhna hoga. Filhaal main apni boundary maintain karungi.
+WHY: Repeated harm has a larger effect than an isolated incident.
+STATE: {'trust': 0.63, 'emotional_safety': 0.66, 'autonomy': 0.85, 'hurt': 0.24, 'openness': 0.91, 'defensiveness': 0.25, 'interaction_count': 3, 'harmful_pattern_count': 1, 'accountable_change_count': 0}
+
+EVENT: GENUINE_APOLOGY | Partner apologises.
+ACTION: ACKNOWLEDGE_AND_OBSERVE
+TIGRESS: Apology sun li. Trust wapas aane mein waqt lagega; aage ka behaviour bhi matter karega.
+WHY: An apology is acknowledged but does not automatically restore trust.
+STATE: {'trust': 0.63, 'emotional_safety': 0.66, 'autonomy': 0.85, 'hurt': 0.24, 'openness': 0.91, 'defensiveness': 0.23, 'interaction_count': 4, 'harmful_pattern_count': 1, 'accountable_change_count': 0}
+
+EVENT: ACCOUNTABILITY_WITH_CHANGE | Partner consistently respects the boundary over time.
+ACTION: RECOGNISE_CHANGE_AND_REBUILD_GRADUALLY
+TIGRESS: Main tumhari responsibility lene aur behaviour badalne ki effort notice kar rahi hoon. Trust dheere-dheere rebuild ho sakta hai.
+WHY: Observed accountability and changed behaviour can gradually rebuild trust.
+STATE: {'trust': 0.69, 'emotional_safety': 0.71, 'autonomy': 0.85, 'hurt': 0.2, 'openness': 0.91, 'defensiveness': 0.19, 'interaction_count': 5, 'harmful_pattern_count': 1, 'accountable_change_count': 1}

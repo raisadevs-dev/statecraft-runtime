@@ -1,0 +1,778 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIGRESS | Realtime Character Lab</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #11140f;
+  color: #f4f2e9;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #394032;
+  background: #181d15;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: 3px;
+}
+
+header h1 span { color: #e9a05d; }
+
+header p {
+  color: #aeb6a3;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+  padding: 16px;
+}
+
+#viewport {
+  min-height: 650px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #394032;
+  border-radius: 10px;
+  background: radial-gradient(ellipse, #39452d, #171d15 75%);
+}
+
+#scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.badge, .hint {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  color: #e8eddd;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.badge { top: 18px; left: 18px; }
+.hint { bottom: 18px; left: 18px; }
+
+.panel {
+  padding: 18px;
+  border: 1px solid #394032;
+  border-radius: 10px;
+  background: #191d17;
+}
+
+.panel h2 { margin-top: 0; }
+
+.control {
+  display: block;
+  margin: 19px 0;
+}
+
+.control label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+output { color: #e9a05d; }
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #c9e58a;
+  cursor: pointer;
+}
+
+select, button {
+  width: 100%;
+  padding: 11px;
+  border-radius: 5px;
+  border: 1px solid #46513b;
+  background: #242b1f;
+  color: #f4f2e9;
+  cursor: pointer;
+}
+
+button {
+  margin-top: 9px;
+  font-weight: bold;
+}
+
+button:hover { border-color: #c9e58a; }
+
+.primary {
+  background: #c9e58a;
+  color: #192014;
+}
+
+small {
+  display: block;
+  margin-top: 6px;
+  color: #9ea695;
+}
+
+.note {
+  color: #aeb6a3;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 20px;
+}
+
+@media (max-width: 850px) {
+  main { grid-template-columns: 1fr; }
+  #viewport { min-height: 500px; }
+}
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+<header>
+  <h1>THE <span>TIGRESS</span></h1>
+  <p>REALTIME 3D CHARACTER LAB · PROTOTYPE 0.1</p>
+</header>
+
+<main>
+  <section id="viewport">
+    <canvas id="scene"></canvas>
+    <div class="badge">CHARACTER PREVIEW / LIVE</div>
+    <div class="hint">Drag to rotate · Scroll to zoom</div>
+  </section>
+
+  <aside class="panel">
+    <h2>Appearance</h2>
+
+    <div class="control">
+      <label>Hybrid balance <output id="hybridValue"></output></label>
+      <input id="hybrid" type="range" min="0" max="100" value="58">
+      <small>Human-like face to feline muzzle</small>
+    </div>
+
+    <div class="control">
+      <label>Fur coverage <output id="furValue"></output></label>
+      <input id="fur" type="range" min="0" max="100" value="48">
+      <small>Changes cheek fur visibility</small>
+    </div>
+
+    <div class="control">
+      <label>Stripe strength <output id="stripeValue"></output></label>
+      <input id="stripes" type="range" min="0" max="100" value="65">
+    </div>
+
+    <div class="control">
+      <label>Ear size <output id="earsValue"></output></label>
+      <input id="ears" type="range" min="65" max="150" value="100">
+    </div>
+
+    <div class="control">
+      <label>Tail length <output id="tailValue"></output></label>
+      <input id="tail" type="range" min="60" max="150" value="100">
+    </div>
+
+    <div class="control">
+      <label>Expression</label>
+      <select id="expression">
+        <option value="friendly">Friendly</option>
+        <option value="curious">Curious</option>
+        <option value="thinking">Thinking</option>
+        <option value="confident">Confident</option>
+        <option value="hurt">Hurt</option>
+      </select>
+    </div>
+
+    <button id="motion" class="primary">Pause animation</button>
+    <button id="front">Front view</button>
+    <button id="side">Side view</button>
+    <button id="export">Export appearance settings</button>
+
+    <p class="note">
+      This is a procedural 3D prototype. Its geometry is assembled from
+      3D shapes. It is not yet a sculpted production model, a full facial
+      rig, or a conversational AI.
+    </p>
+  </aside>
+</main>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// --------------------------------------------------
+// 1. SCENE
+// --------------------------------------------------
+
+const canvas = document.querySelector("#scene");
+const viewport = document.querySelector("#viewport");
+
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true
+});
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x192017, 10, 22);
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+camera.position.set(4, 3.2, 9);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.9, 0);
+controls.enableDamping = true;
+controls.minDistance = 4;
+controls.maxDistance = 14;
+controls.maxPolarAngle = Math.PI * 0.88;
+
+scene.add(new THREE.HemisphereLight(0xf0f2dc, 0x454d37, 2));
+
+const keyLight = new THREE.DirectionalLight(0xffe0bd, 3);
+keyLight.position.set(4, 7, 5);
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0xc9e58a, 2);
+rimLight.position.set(-4, 4, -5);
+scene.add(rimLight);
+
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 64),
+  new THREE.MeshStandardMaterial({ color: 0x20291c })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.03;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(10, 30, 0x647052, 0x343d2e);
+grid.position.y = -0.01;
+grid.material.transparent = true;
+grid.material.opacity = 0.2;
+scene.add(grid);
+
+// --------------------------------------------------
+// 2. MATERIALS AND SHAPE HELPERS
+// --------------------------------------------------
+
+function material(color, roughness = 0.75) {
+  return new THREE.MeshStandardMaterial({ color, roughness });
+}
+
+const orange = material(0xd98442);
+const cream = material(0xf1d9b5);
+const dark = material(0x38251c);
+const skin = material(0xe8b28c);
+const hair = material(0x36241e);
+const pink = material(0xa76667);
+const eyeWhite = material(0xfff3dc);
+const iris = material(0x805025, 0.3);
+const black = material(0x211812, 0.3);
+const shirt = material(0x536d49);
+const trousers = material(0x34392e);
+
+const root = new THREE.Group();
+scene.add(root);
+
+const body = new THREE.Group();
+root.add(body);
+
+const refs = {};
+
+function ball(parent, name, position, scale, mat) {
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 28, 20),
+    mat
+  );
+
+  mesh.name = name;
+  mesh.position.set(...position);
+  mesh.scale.set(...scale);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  refs[name] = mesh;
+  return mesh;
+}
+
+function link(parent, name, start, end, radius, mat) {
+  const a = new THREE.Vector3(...start);
+  const b = new THREE.Vector3(...end);
+  const direction = b.clone().sub(a);
+
+  const mesh = new THREE.Mesh(
+    new THREE.CapsuleGeometry(
+      radius,
+      Math.max(0.01, direction.length() - radius * 2),
+      5,
+      12
+    ),
+    mat
+  );
+
+  mesh.position.copy(a.clone().add(b).multiplyScalar(0.5));
+  mesh.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.normalize()
+  );
+
+  mesh.castShadow = true;
+  parent.add(mesh);
+  refs[name] = mesh;
+  return mesh;
+}
+
+function stripe(parent, name, position, scale, rotation = [0, 0, 0]) {
+  const mesh = ball(parent, name, position, scale, dark);
+  mesh.rotation.set(...rotation);
+  return mesh;
+}
+
+// --------------------------------------------------
+// 3. HUMANOID BODY
+// --------------------------------------------------
+
+ball(body, "hips", [0, 1.12, 0], [0.43, 0.31, 0.3], trousers);
+
+link(body, "torso", [0, 1.12, 0], [0, 2.12, 0], 0.34, shirt);
+
+ball(body, "chest", [0, 1.89, 0], [0.46, 0.37, 0.32], shirt);
+ball(body, "neck", [0, 2.35, 0], [0.18, 0.25, 0.18], skin);
+
+for (const side of [-1, 1]) {
+  link(
+    body,
+    "leg_" + side,
+    [side * 0.21, 1.05, 0],
+    [side * 0.24, 0.33, 0],
+    0.16,
+    trousers
+  );
+
+  ball(
+    body,
+    "foot_" + side,
+    [side * 0.24, 0.15, 0.13],
+    [0.2, 0.13, 0.31],
+    orange
+  );
+
+  for (let toe = -1; toe <= 1; toe++) {
+    ball(
+      body,
+      `toe_${side}_${toe}`,
+      [side * 0.24 + toe * 0.065, 0.13, 0.34],
+      [0.055, 0.06, 0.075],
+      cream
+    );
+  }
+}
+
+// --------------------------------------------------
+// 4. HEAD: HUMAN + TIGER HYBRID
+// --------------------------------------------------
+
+const head = new THREE.Group();
+head.position.set(0, 2.8, 0);
+body.add(head);
+refs.head = head;
+
+ball(head, "face", [0, 0, 0], [0.49, 0.57, 0.4], skin);
+ball(head, "faceFur", [0, -0.13, 0.04], [0.46, 0.45, 0.4], orange);
+ball(head, "faceMask", [0, -0.14, 0.1], [0.37, 0.37, 0.34], cream);
+
+// Soft hair
+ball(head, "hairCap", [0, 0.38, -0.02], [0.5, 0.28, 0.42], hair);
+ball(head, "fringe", [0, 0.24, 0.31], [0.3, 0.15, 0.12], hair);
+
+// Ears
+for (const side of [-1, 1]) {
+  const ear = new THREE.Group();
+  ear.position.set(side * 0.38, 0.42, 0);
+  head.add(ear);
+  refs["ear_" + side] = ear;
+
+  ball(ear, "earOuter_" + side, [0, 0.16, 0], [0.17, 0.23, 0.12], orange);
+  ball(ear, "earInner_" + side, [0, 0.16, 0.1], [0.09, 0.14, 0.035], pink);
+}
+
+// Muzzle: a gentle feline shape, not a frightening snout
+ball(head, "muzzleLeft", [-0.12, -0.21, 0.37], [0.17, 0.13, 0.15], cream);
+ball(head, "muzzleRight", [0.12, -0.21, 0.37], [0.17, 0.13, 0.15], cream);
+ball(head, "nose", [0, -0.13, 0.51], [0.075, 0.052, 0.045], pink);
+
+// Small smile
+const smile = new THREE.Mesh(
+  new THREE.TorusGeometry(0.065, 0.009, 8, 24, Math.PI),
+  black
+);
+smile.position.set(0, -0.29, 0.49);
+smile.rotation.z = Math.PI;
+head.add(smile);
+refs.smile = smile;
+
+// Expressive eyes, pupils and eyebrows
+for (const side of [-1, 1]) {
+  const x = side * 0.19;
+
+  ball(head, "eyeWhite_" + side, [x, 0.04, 0.35], [0.11, 0.13, 0.06], eyeWhite);
+  ball(head, "iris_" + side, [x, 0.03, 0.402], [0.064, 0.08, 0.027], iris);
+  ball(head, "pupil_" + side, [x, 0.025, 0.425], [0.029, 0.047, 0.015], black);
+  ball(head, "glint_" + side, [x - 0.017, 0.06, 0.44], [0.017, 0.02, 0.01], eyeWhite);
+
+  const brow = ball(
+    head,
+    "brow_" + side,
+    [x, 0.17, 0.36],
+    [0.12, 0.027, 0.03],
+    hair
+  );
+  brow.rotation.z = side * 0.1;
+}
+
+// Fluffy cheeks and tiger markings
+for (const side of [-1, 1]) {
+  ball(
+    head,
+    "cheek_" + side,
+    [side * 0.37, -0.15, 0.08],
+    [0.14, 0.17, 0.18],
+    orange
+  );
+
+  stripe(
+    head,
+    "faceStripe_" + side,
+    [side * 0.34, 0.06, 0.25],
+    [0.025, 0.1, 0.018],
+    [0, 0, -side * 0.3]
+  );
+
+  stripe(
+    head,
+    "lowerStripe_" + side,
+    [side * 0.39, -0.06, 0.23],
+    [0.02, 0.07, 0.016],
+    [0, 0, -side * 0.4]
+  );
+}
+
+stripe(head, "foreheadStripe", [0, 0.33, 0.31], [0.025, 0.09, 0.018]);
+
+// --------------------------------------------------
+// 5. ARMS AND PAWS
+// --------------------------------------------------
+
+const arms = [];
+
+for (const side of [-1, 1]) {
+  const arm = new THREE.Group();
+  arm.position.set(side * 0.46, 2.02, 0);
+  body.add(arm);
+  refs["arm_" + side] = arm;
+  arms.push({ side, arm });
+
+  link(arm, "upperArm_" + side, [0, 0, 0], [side * 0.06, -0.39, 0], 0.14, shirt);
+  link(arm, "forearm_" + side, [side * 0.06, -0.38, 0], [side * 0.1, -0.73, 0.07], 0.12, orange);
+
+  ball(
+    arm,
+    "paw_" + side,
+    [side * 0.1, -0.81, 0.09],
+    [0.16, 0.13, 0.16],
+    orange
+  );
+
+  for (let toe = -1; toe <= 1; toe++) {
+    ball(
+      arm,
+      `finger_${side}_${toe}`,
+      [side * 0.1 + toe * 0.065, -0.88, 0.17],
+      [0.05, 0.055, 0.06],
+      cream
+    );
+  }
+
+  stripe(
+    arm,
+    "armStripe_" + side,
+    [side * 0.06, -0.52, 0.105],
+    [0.09, 0.025, 0.014]
+  );
+}
+
+// --------------------------------------------------
+// 6. CURVED, ANIMATED STRIPED TAIL
+// --------------------------------------------------
+
+const tail = new THREE.Group();
+tail.position.set(0, 1.28, -0.25);
+body.add(tail);
+refs.tail = tail;
+
+const tailPoints = [
+  [0, 0, 0],
+  [0.02, -0.03, -0.19],
+  [0.09, 0.01, -0.38],
+  [0.17, 0.1, -0.56],
+  [0.19, 0.24, -0.72],
+  [0.12, 0.35, -0.83]
+];
+
+for (let i = 0; i < tailPoints.length - 1; i++) {
+  link(
+    tail,
+    "tailSegment_" + i,
+    tailPoints[i],
+    tailPoints[i + 1],
+    0.065,
+    i % 2 === 0 ? orange : dark
+  );
+}
+
+ball(tail, "tailTip", tailPoints[tailPoints.length - 1], [0.075, 0.08, 0.09], dark);
+
+// --------------------------------------------------
+// 7. LIVE CONTROLS
+// --------------------------------------------------
+
+const settings = {
+  hybrid: 58,
+  fur: 48,
+  stripes: 65,
+  ears: 100,
+  tail: 100,
+  expression: "friendly",
+  motion: true
+};
+
+const get = id => document.getElementById(id);
+
+function updateAppearance() {
+  const hybrid = Number(get("hybrid").value) / 100;
+  const fur = Number(get("fur").value) / 100;
+  const stripeAmount = Number(get("stripes").value) / 100;
+  const earScale = Number(get("ears").value) / 100;
+  const tailScale = Number(get("tail").value) / 100;
+
+  settings.hybrid = Number(get("hybrid").value);
+  settings.fur = Number(get("fur").value);
+  settings.stripes = Number(get("stripes").value);
+  settings.ears = Number(get("ears").value);
+  settings.tail = Number(get("tail").value);
+
+  get("hybridValue").textContent =
+    hybrid < 0.35 ? "Human-first" :
+    hybrid > 0.72 ? "Feline-leaning" : "Balanced";
+
+  get("furValue").textContent =
+    fur < 0.3 ? "Light" :
+    fur > 0.7 ? "Heavy" : "Medium";
+
+  get("stripeValue").textContent = Math.round(stripeAmount * 100) + "%";
+  get("earsValue").textContent = Math.round(earScale * 100) + "%";
+  get("tailValue").textContent = Math.round(tailScale * 100) + "%";
+
+  // Hybrid slider changes muzzle size
+  for (const name of ["muzzleLeft", "muzzleRight"]) {
+    refs[name].scale.set(
+      0.14 + hybrid * 0.08,
+      0.10 + hybrid * 0.06,
+      0.12 + hybrid * 0.08
+    );
+  }
+
+  refs.nose.scale.set(
+    0.055 + hybrid * 0.035,
+    0.04 + hybrid * 0.02,
+    0.035 + hybrid * 0.02
+  );
+
+  // Fur slider changes cheek volume and fur visibility
+  for (const side of [-1, 1]) {
+    refs["cheek_" + side].visible = fur > 0.03;
+    refs["cheek_" + side].scale.set(
+      0.09 + fur * 0.08,
+      0.1 + fur * 0.12,
+      0.12 + fur * 0.1
+    );
+
+    refs["ear_" + side].scale.setScalar(earScale);
+  }
+
+  refs.faceFur.visible = fur > 0.05;
+  refs.faceFur.scale.set(
+    0.42 + fur * 0.05,
+    0.42 + fur * 0.06,
+    0.36 + fur * 0.05
+  );
+
+  // Tail length
+  tail.scale.setScalar(tailScale);
+
+  // Stripe strength
+  for (const name of Object.keys(refs)) {
+    if (
+      name.startsWith("faceStripe") ||
+      name.startsWith("lowerStripe") ||
+      name.startsWith("armStripe") ||
+      name === "foreheadStripe"
+    ) {
+      refs[name].visible = stripeAmount > 0.02;
+      refs[name].scale.x = 0.025 * (0.2 + stripeAmount);
+    }
+  }
+
+  // Expressions use eyebrow positions and ear tilt.
+  const expression = get("expression").value;
+  settings.expression = expression;
+
+  for (const side of [-1, 1]) {
+    refs["brow_" + side].position.y = 0.17;
+    refs["ear_" + side].rotation.z = 0;
+  }
+
+  refs.head.rotation.z = 0;
+  refs.head.rotation.x = 0;
+
+  if (expression === "curious") {
+    refs.head.rotation.z = 0.05;
+    refs["ear_-1"].rotation.z = -0.1;
+    refs["ear_1"].rotation.z = 0.1;
+    refs["brow_-1"].position.y = 0.2;
+  }
+
+  if (expression === "thinking") {
+    refs.head.rotation.z = -0.025;
+    refs["brow_1"].position.y = 0.14;
+  }
+
+  if (expression === "confident") {
+    refs.head.rotation.x = -0.02;
+    refs["brow_-1"].position.y = 0.15;
+    refs["brow_1"].position.y = 0.15;
+  }
+
+  if (expression === "hurt") {
+    refs.head.rotation.z = -0.035;
+    refs["ear_-1"].rotation.z = 0.16;
+    refs["ear_1"].rotation.z = -0.16;
+    refs["brow_-1"].position.y = 0.19;
+    refs["brow_1"].position.y = 0.19;
+  }
+}
+
+for (const id of ["hybrid", "fur", "stripes", "ears", "tail"]) {
+  get(id).addEventListener("input", updateAppearance);
+}
+
+get("expression").addEventListener("change", updateAppearance);
+
+get("motion").addEventListener("click", () => {
+  settings.motion = !settings.motion;
+  get("motion").textContent = settings.motion
+    ? "Pause animation"
+    : "Resume animation";
+});
+
+get("front").addEventListener("click", () => {
+  camera.position.set(0, 3, 9);
+  controls.target.set(0, 1.9, 0);
+});
+
+get("side").addEventListener("click", () => {
+  camera.position.set(9, 2.8, 0);
+  controls.target.set(0, 1.9, 0);
+});
+
+get("export").addEventListener("click", () => {
+  const blob = new Blob(
+    [JSON.stringify(settings, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "tigress-appearance.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+});
+
+// --------------------------------------------------
+// 8. RESIZE AND ANIMATION LOOP
+// --------------------------------------------------
+
+function resize() {
+  const width = viewport.clientWidth;
+  const height = viewport.clientHeight;
+
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(viewport);
+resize();
+updateAppearance();
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const time = clock.getElapsedTime();
+
+  if (settings.motion) {
+    tail.rotation.y = Math.sin(time * 1.2) * 0.22;
+    tail.rotation.x = Math.sin(time * 0.8) * 0.06;
+
+    refs.head.position.y = 2.8 + Math.sin(time * 1.7) * 0.015;
+
+    for (const { side, arm } of arms) {
+      arm.rotation.z = side * 0.02 + Math.sin(time * 1.1) * 0.025;
+    }
+  } else {
+    tail.rotation.set(0, 0, 0);
+    refs.head.position.y = 2.8;
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
